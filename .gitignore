@@ -1,0 +1,8 @@
+# Ignore the config file
+config.yml
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
