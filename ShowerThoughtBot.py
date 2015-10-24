@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -39,4 +39,14 @@ class ShowerThoughtBot:
         self.ircsock.send("PRIVMSG {} :Hello!\n".format(self.c.channel).encode())
 
 bot = ShowerThoughtBot()
-bot.sendmsg(bot.c['channel'], "TESTING!".encode())
+
+while 1:
+    msg = bot.ircsock.recv(2048).decode()
+    msg = msg.strip('\n\r')
+    print(msg)
+
+    if msg.find("PING :") != -1:
+        bot.ping()
+
+    if msg.find(":hello {}".format(bot.c['nick'])) != -1:
+        bot.hello()
