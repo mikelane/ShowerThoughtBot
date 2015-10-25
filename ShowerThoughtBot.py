@@ -30,7 +30,7 @@ class ShowerThoughtBot:
         self.ircsock.send("JOIN {} {}\r\n".format(chan, self.c['key']).encode())
 
     def ping(self):
-        self.ircsock.send("PONG :pingis\r\n")
+        self.ircsock.send("PONG :pingis\r\n".encode())
 
     def sendmsg(self, chan, msg):
         self.ircsock.send("PRIVMSG {} :{}\r\n".format(chan, msg).encode())
