@@ -10,7 +10,7 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import socket, ssl, yaml
+import socket, ssl, yaml, time
 
 class ShowerThoughtBot:
     def __init__(self):
@@ -19,33 +19,37 @@ class ShowerThoughtBot:
             self.s = socket.socket()
             self.s.connect((self.c['server'], self.c['port']))
             self.ircsock = ssl.wrap_socket(self.s)
-            self.ircsock.send("USER {} {} {} :{}".format(self.c['nick'],
-                                                         self.c['nick'],
-                                                         self.c['nick'],
-                                                         "If everyone on Earth died simultaneously, the Internet would be comprised entirely of bots posting, liking and upvoting each other.").encode())
-            self.ircsock.send("NICK {}\n".format(self.c['nick']).encode())
-            self.joinchan(self.c['channel'])
+            time.sleep(2)
+            self.ircsock.send("USER {} {} {} :{}\r\n".format(self.c['nick'],
+                                                             self.c['nick'],
+                                                             self.c['nick'],
+                                                             self.c['nick']).encode())
+            self.ircsock.send("NICK {}\r\n".format(self.c['nick']).encode())
 
     def joinchan(self, chan):
-        self.ircsock.send("JOIN {} {}\n".format(chan, self.c['key']).encode())
+        self.ircsock.send("JOIN {} {}\r\n".format(chan, self.c['key']).encode())
 
     def ping(self):
-        self.ircsock.send("PONG :pingis\n")
+        self.ircsock.send("PONG :pingis\r\n")
 
     def sendmsg(self, chan, msg):
-        self.ircsock.send("PRIVMSG {} :{}\n".format(chan, msg).encode())
+        self.ircsock.send("PRIVMSG {} :{}\r\n".format(chan, msg).encode())
 
     def hello(self):
-        self.ircsock.send("PRIVMSG {} :Hello!\n".format(self.c.channel).encode())
+        self.ircsock.send("PRIVMSG {} :Hello!\r\n".format(self.c['channel']).encode())
 
 bot = ShowerThoughtBot()
+time.sleep(2)
+bot.joinchan(bot.c['channel'])
 
 while 1:
     msg = bot.ircsock.recv(2048).decode()
     msg = msg.strip('\n\r')
-    print(msg)
+    if(msg != ""):
+        print(msg)
 
     if msg.find("PING :") != -1:
+        print(msg)
         bot.ping()
 
     if msg.find(":hello {}".format(bot.c['nick'])) != -1:
