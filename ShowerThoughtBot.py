@@ -13,8 +13,8 @@ __license__ = 'GPLv3'
 import socket, ssl, yaml, time, re
 
 class Bot:
-    def __init__(self):
-        with open('config.yml', 'r') as y:
+    def __init__(self, file):
+        with open(file, 'r') as y:
             config = yaml.load(y)
             self.server = config['server']
             self.port = int(config['port'])
@@ -44,7 +44,7 @@ class Bot:
     def hello(self, channel, nick):
         self.ircsock.send("PRIVMSG {} :Hello, {}!\r\n".format(channel, nick).encode())
 
-bot = Bot()
+bot = Bot('config.yml')
 
 while True:
     # Gather input
