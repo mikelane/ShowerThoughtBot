@@ -71,6 +71,7 @@ while True:
         print(msg)
         bot.ping()
 
-
+    # When "hello <bot.nick>" is found, call the hello function using
+    # the channel that it came from and the user who sent it.
     if msg.find(":hello {}".format(bot.nick)) != -1:
         bot.hello(chan, fromNick)
