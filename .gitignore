@@ -6,3 +6,8 @@ config.yml
 *.iml
 *.iws
 
+# Database
+data/
+
+# Pycache
+__pycache__/
