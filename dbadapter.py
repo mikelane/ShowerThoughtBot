@@ -31,7 +31,6 @@ class DBAdapter:
 
     def insertThoughts(self, data):
         with DBManager(self.file) as c:
-            # c.executemany('INSERT INTO thoughts VALUES (?, ?, ?, ?, ?, ?, ?)', data)
             for item in data:
                 try:
                     c.execute('INSERT INTO thoughts VALUES (?, ?, ?, ?, ?, ?, ?)', item)
