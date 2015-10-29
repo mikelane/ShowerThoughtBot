@@ -39,12 +39,6 @@ class ShowerThoughtBot(Bot):
     # Run the bot!
     def run(self):
         while True:
-            # Check the clock
-            now = datetime.now()
-            if now - self.update_time > 86400:
-                self.update_time = now
-                self.reddit.getDailyTop()
-
             # Gather some input
             msg = self.ircsock.recv(2048).decode()
             # Strip newlines
@@ -77,6 +71,13 @@ class ShowerThoughtBot(Bot):
 
             if msg.find(":!showerthought") != -1:
                 self.printShowerThought(chan, fromNick)
+
+            # Check the clock
+            # now = datetime.now()
+            # if now - self.update_time > 86400:
+            #     self.update_time = now
+            #     self.reddit.getDailyTop()
+
 
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')
