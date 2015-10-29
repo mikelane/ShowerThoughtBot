@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Module Docstring
-Docstrings: http://www.python.org/dev/peps/pep-0257/
+An adapter for the SQLite3 database so that the ShowerThoughtBot class can
+make pythonic calls rather than database calls.
 """
 
 __author__ = 'Mike Lane (http://www.github.com/mikelane/'

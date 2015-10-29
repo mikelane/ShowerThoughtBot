@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Module Docstring
-Docstrings: http://www.python.org/dev/peps/pep-0257/
+My extension of the Bot object. This sets up a database with shower thoughts
+and handles the functions that are more specialized to the Shower Thought Bot.
 """
 
 __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
@@ -11,21 +11,25 @@ __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
 import re, yaml
-from Bot import Bot
+from bot import Bot
 from reddit import Reddit
 
 class ShowerThoughtBot(Bot):
     def __init__(self, file):
+        # Initialize the Bot
         super().__init__(file)
 
+        # Load the configurations.
         with open(file, 'r') as y:
             # Load the configs
             config = yaml.load(y)
 
-            self.dbfile = config['database']
-
+        # Grab the database filename from the configs.
+        self.dbfile = config['database']
+        # Create a Reddit object to handle the Reddit-specific tasks.
         self.reddit = Reddit(self.dbfile)
 
+    # Run the bot!
     def run(self):
         while True:
             # Gather some input
