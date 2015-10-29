@@ -45,8 +45,8 @@ class ShowerThoughtBot(Bot):
                     # print("fromNick: {}".format(fromNick))
                     # If the message isn't empty, log it to the screen
                     # @todo make this log to a file, too. Write a log function that does both
-                    if(msg != ""):
-                        print(msg)
+                if(msg != ""):
+                    print(msg)
 
             # If we get a ping, log the ping and execute the ping function
             if msg.find("PING :") != -1:
