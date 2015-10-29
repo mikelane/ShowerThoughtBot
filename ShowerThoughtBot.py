@@ -5,6 +5,8 @@
 My extension of the Bot object. This sets up a database with shower thoughts
 and handles the functions that are more specialized to the Shower Thought Bot.
 """
+from datetime import datetime
+import time
 
 __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
@@ -18,6 +20,7 @@ class ShowerThoughtBot(Bot):
     def __init__(self, file):
         # Initialize the Bot
         super().__init__(file)
+        self.update_time = datetime.now()
 
         # Load the configurations.
         with open(file, 'r') as y:
@@ -29,9 +32,19 @@ class ShowerThoughtBot(Bot):
         # Create a Reddit object to handle the Reddit-specific tasks.
         self.reddit = Reddit(self.dbfile)
 
+    def printShowerThought(self, chan, nick):
+        self.ircsock.send("PRIVMSG {} :I'm not quite ready yet, {}\r\n".format(
+            channel, nick).encode())
+
     # Run the bot!
     def run(self):
         while True:
+            # Check the clock
+            now = datetime.now()
+            if now - self.update_time > 86400:
+                self.update_time = now
+                self.reddit.getDailyTop()
+
             # Gather some input
             msg = self.ircsock.recv(2048).decode()
             # Strip newlines
@@ -61,6 +74,9 @@ class ShowerThoughtBot(Bot):
             # the channel that it came from and the user who sent it.
             if msg.find(":hello {}".format(self.nick)) != -1:
                 self.hello(chan, fromNick)
+
+            if msg.find(":!showerthought") != -1:
+                self.printShowerThought(chan, fromNick)
 
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')

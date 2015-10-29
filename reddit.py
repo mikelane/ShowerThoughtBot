@@ -22,13 +22,29 @@ class Reddit:
     def __init__(self, dbfile):
         self.user_agent = 'A shower thought grabber'
         self.reddit = praw.Reddit(self.user_agent)
+        self.dbfile = dbfile
         if not os.path.isfile(dbfile):
-            self.seedDB(dbfile)
+            self.seedDB()
 
-    def seedDB(self, file):
+    def seedDB(self,):
+        self.getSubmissions('all')
+
+    def getDailyTop(self):
+        self.getSubmissions('day')
+
+    def getSubmissions(self, timeframe):
         submission_list = []
-        db = DBAdapter(file)
-        submissions = self.reddit.get_subreddit('showerthoughts').get_top_from_all()
+        db = DBAdapter(self.dbfile)
+        if timeframe == 'all':
+            submissions = self.reddit.get_subreddit(
+                'showerthoughts').get_top_from_all()
+        elif timeframe == 'day':
+            submissions = self.reddit.get_subreddit(
+                'showerthoughts').get_top_from_day(limit=5)
+        else:
+            print("WARNING: I don't know what submissions to get!")
+            return
+
         for submission in submissions:
             text = submission.title
             author = '/u/' + submission.author.name
@@ -36,8 +52,8 @@ class Reddit:
             link = submission.short_link
             id = submission.id
             submission_list.append((None, text, author, date, link, id, 0))
-        db.insertThoughts(submission_list)
 
+        db.insertThoughts(submission_list)
 
 if __name__ == '__main__':
     r = Reddit('test.db')
