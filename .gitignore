@@ -11,3 +11,6 @@ data/
 
 # Pycache
 __pycache__/
+
+# Databases
+*.db
