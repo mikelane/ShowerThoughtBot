@@ -34,7 +34,7 @@ class ShowerThoughtBot(Bot):
 
     def printShowerThought(self, chan, nick):
         self.ircsock.send("PRIVMSG {} :I'm not quite ready yet, {}\r\n".format(
-            channel, nick).encode())
+            chan, nick).encode())
 
     # Run the bot!
     def run(self):
