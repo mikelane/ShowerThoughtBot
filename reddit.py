@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Module Docstring
-Docstrings: http://www.python.org/dev/peps/pep-0257/
+Handle all the reddit-specific tasks. One could use this module as an
+example for any other service with an API. Reddit, SmugMug, Flickr,
+DuckDuckGo, etc.
 """
 
 __author__ = 'Mike Lane (http://www.github.com/mikelane/'
