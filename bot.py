@@ -22,6 +22,7 @@ __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
 import socket, ssl, yaml, time
+from datetime import datetime
 
 class Bot:
     def __init__(self, file):
