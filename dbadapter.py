@@ -10,19 +10,30 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import os, sqlite3
+from dbmanager import DBManager
+from sqlite3 import IntegrityError
 
+class DBAdapter:
+    def __init__(self, file):
+        self.file = file
+        self.createDB()
 
-conn = sqlite3.connect('example3.db')
+    def createDB(self):
+        with DBManager(self.file) as c:
+            c.execute('''CREATE TABLE IF NOT EXISTS thoughts
+                  (id INTEGER PRIMARY KEY,
+                  thought TEXT NOT NULL UNIQUE,
+                  author TEXT,
+                  date REAL NOT NULL,
+                  link TEXT,
+                  Reddit_ID TEXT,
+                  score INTEGER)''')
 
-c = conn.cursor()
-
-c.execute('''CREATE TABLE IF NOT EXISTS thoughts
-             (id INTEGER PRIMARY KEY, thought TEXT NOT NULL UNIQUE, author TEXT, date REAL NOT NULL, link TEXT, Reddit_ID TEXT, score INTEGER)''')
-
-try:
-    c.execute("INSERT INTO thoughts VALUES (NULL, 'It''s weird to think people who are six foot are only 6 subways tall', '/u/HypnoticHD', 1445804764.0, 'http://redd.it/3q6u9u', '3q6u9u', 0)")
-except sqlite3.IntegrityError:
-    print("Whoa. Someone already thought that exact same thought!")
-conn.commit()
-conn.close()
+    def insertThoughts(self, data):
+        with DBManager(self.file) as c:
+            # c.executemany('INSERT INTO thoughts VALUES (?, ?, ?, ?, ?, ?, ?)', data)
+            for item in data:
+                try:
+                    c.execute('INSERT INTO thoughts VALUES (?, ?, ?, ?, ?, ?, ?)', item)
+                except IntegrityError:
+                    pass

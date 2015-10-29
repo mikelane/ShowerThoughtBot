@@ -10,27 +10,34 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import praw
-nsfw_list = {'fuck', 'sex', 'ass', 'cunt', 'whore', 'shit'}
-# r = praw.Reddit('OAuth testing example by u/lanemik ver 0.1 '
-#                 'see http://github.com/mikelane for source')
-# r.set_oauth_app_info(client_id='x33k8j_qKIOEww',
-#                      client_secret='p38Mv5GbCikxULc_66sCr4a2wng',
-#                      redirect_uri='http://127.0.0.1:65010/authorize_callback')
-r = praw.Reddit(user_agent='my cool showerthought grabber')
-submissions = r.get_subreddit('showerthoughts').get_top_from_hour(limit=10)
-for submission in submissions:
-    text = submission.title
-    nsfw = any(string in text for string in nsfw_list)
-    if not nsfw:
-        author = '/u/' + submission.author.name
-        date = submission.created_utc
-        id = submission.id
-        link = submission.short_link
-        print("\"{text}\" -{by}, {when} link:{url} id:{id}".format(text = text,
-                                                               by   = author,
-                                                               when = date,
-                                                               url  = link,
-                                                               id   = id))
-    else:
-        print("Hey! None of that language here!")
+import praw, os.path
+from dbadapter import DBAdapter
+
+class Reddit:
+    """The Reddit object will handle seeding the database with shower thoughts
+    if required and it will update the database with top shower thoughts from
+    the last day when asked.
+    """
+    def __init__(self, dbfile):
+        self.user_agent = 'A shower thought grabber'
+        self.reddit = praw.Reddit(self.user_agent)
+        if not os.path.isfile(dbfile):
+            self.seedDB(dbfile)
+
+    def seedDB(self, file):
+        submission_list = []
+        db = DBAdapter(file)
+        submissions = self.reddit.get_subreddit('showerthoughts').get_top_from_all()
+        for submission in submissions:
+            text = submission.title
+            author = '/u/' + submission.author.name
+            date = submission.created_utc
+            link = submission.short_link
+            id = submission.id
+            submission_list.append((None, text, author, date, link, id, 0))
+        db.insertThoughts(submission_list)
+
+
+if __name__ == '__main__':
+    r = Reddit('test.db')
+    print("Finished")
