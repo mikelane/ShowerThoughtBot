@@ -15,6 +15,7 @@ __license__ = 'GPLv3'
 import re, yaml
 from bot import Bot
 from reddit import Reddit
+from datetime import datetime
 
 class ShowerThoughtBot(Bot):
     def __init__(self, file):
@@ -35,6 +36,19 @@ class ShowerThoughtBot(Bot):
     def printShowerThought(self, chan, nick):
         self.ircsock.send("PRIVMSG {} :I'm not quite ready yet, {}\r\n".format(
             chan, nick).encode())
+
+    def log(self, message, severity='info'):
+        date = datetime.now()
+        date = date.strftime('%Y-%W')
+        log_file = ""
+        if severity.lower == 'error':
+            logfile = "ERROR-{}.log".format(date)
+        elif severity.lower == 'warning':
+            logfile = "WARNING-{}.log".format(date)
+        else:
+            logfile = "INFO-{}.log".format(date)
+        with open(logfile, 'a') as log:
+            log.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S :: {}".format(msg)))
 
     # Run the bot!
     def run(self):
@@ -61,7 +75,6 @@ class ShowerThoughtBot(Bot):
 
             # If we get a ping, log the ping and execute the ping function
             if msg.find("PING :") != -1:
-                print(msg)
                 self.ping()
 
             # When "hello <self.nick>" is found, call the hello function using
