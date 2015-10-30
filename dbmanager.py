@@ -20,7 +20,7 @@ class DBManager:
     def __init__(self, file):
         """
         :param file: The database filename
-        :return:
+        :return: void
         """
         self.file = file
         self.conn = None

@@ -34,7 +34,7 @@ class Log:
             logfile = "logs/INFO-{}.log".format(date)
 
         msg_date = datetime.now().strftime(self.msg_format)
-        print("{} :: {}".format(msg_date, message))
+        print(message)
 
         if not severity == 'screen':
             with open(logfile, 'a') as log:
@@ -42,6 +42,7 @@ class Log:
                     datetime.now().strftime("{} :: {}\n".format(msg_date,
                                                               message)))
 
+# module testing...
 if __name__ == '__main__':
     l = Log()
     l.log("OMG OMG OMG!", "error")

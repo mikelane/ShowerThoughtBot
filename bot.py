@@ -23,11 +23,10 @@ __license__ = 'GPLv3'
 
 import socket, ssl, yaml, time
 from log import Log
-from datetime import datetime
+import atexit
 
 class Bot:
     def __init__(self, file):
-        # @todo add atexit function to close socket on interrupt or error
         with open(file, 'r') as y:
             # Load the configs
             config = yaml.load(y)
@@ -57,6 +56,9 @@ class Bot:
         for channel in self.channels:
             self.joinchan(channel['name'], channel['key'])
 
+        # Register a function to close the socket upon exit or interrupt
+        atexit.register(closeSocket, self.ircsock)
+
     def joinchan(self, chan, key):
         self.ircsock.send("JOIN {} {}\r\n".format(chan, key).encode())
 
@@ -68,4 +70,9 @@ class Bot:
 
     def hello(self, channel, nick):
         self.ircsock.send("PRIVMSG {} :Hello, {}!\r\n".format(channel, nick).encode())
+
+def closeSocket(socket):
+    l = Log()
+    l.log('connection closed', 'info')
+    socket.close()
 
