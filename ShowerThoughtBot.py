@@ -56,9 +56,8 @@ class ShowerThoughtBot(Bot):
                     fromNick = fromNick.strip(':!')
                     # print("fromNick: {}".format(fromNick))
                     # If the message isn't empty, log it to the screen
-                    # @todo make this log to a file, too. Write a log function that does both
             if(msg != ""):
-                print(msg)
+                self.log.log(msg, "screen")
 
             # If we get a ping, log the ping and execute the ping function
             if msg.find("PING :") != -1:
@@ -67,9 +66,11 @@ class ShowerThoughtBot(Bot):
             # When "hello <self.nick>" is found, call the hello function using
             # the channel that it came from and the user who sent it.
             if msg.find(":hello {}".format(self.nick)) != -1:
+                self.log.log(msg, "info")
                 self.hello(chan, fromNick)
 
             if msg.find(":!showerthought") != -1:
+                self.log.log(msg, "info")
                 self.printShowerThought(chan, fromNick)
 
             # Check the clock

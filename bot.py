@@ -22,6 +22,7 @@ __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
 import socket, ssl, yaml, time
+from log import Log
 from datetime import datetime
 
 class Bot:
@@ -30,6 +31,8 @@ class Bot:
         with open(file, 'r') as y:
             # Load the configs
             config = yaml.load(y)
+
+        self.log = Log()
 
         # Store the configs in the Bot
         self.server    = config['server']
@@ -47,6 +50,7 @@ class Bot:
         self.ircsock.send("NICK {}\r\n".format(self.nick).encode())
 
         # Have to sleep for a couple of potatoes so you don't try to join too early
+        # @todo do a callback lambda instead?
         time.sleep(2)
 
         # Join all the channels specified in the config file
