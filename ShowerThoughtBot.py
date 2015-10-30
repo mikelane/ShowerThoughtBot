@@ -35,15 +35,29 @@ class ShowerThoughtBot(Bot):
     def parseMessage(self, msg, chan, fromNick):
         if msg.find("PING :") != -1:
             self.ping()
-        elif (msg.find("hello {}".format(self.nick)) != -1 or
-              msg.find("hello, {}".format(self.nick)) != -1):
+        elif (msg.find(":hello {}".format(self.nick)) != -1 or
+              msg.find(":hello, {}".format(self.nick)) != -1 or
+              msg.find(":hi {}".format(self.nick)) != -1):
             self.log.log(msg, "info")
             self.hello(chan, fromNick)
         elif msg.find(":!showerthought") != -1:
             self.log.log(msg, "info")
             self.printShowerThought(chan, fromNick)
+        elif (msg.find(":{}: help".format(self.nick)) != -1 or
+              msg.find(":!help") != -1):
+            self.log.log(msg, "info")
+            self.printHelp(chan)
+        elif msg.find(":!source") != -1:
+            self.log.log(msg, "info")
+            self.printSourceLink(chan)
         else:
             self.log.log(msg, "screen")
+
+    def printSourceLink(self, chan):
+        self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, https://github.com/mikelane/ShowerThoughtBot\r\n".format(chan).encode())
+
+    def printHelp(self, chan):
+        self.ircsock.send("PRIVMSG {} :Get a shower thought with !showerthought\r\n".format(chan).encode())
 
     def printShowerThought(self, chan, nick):
         db = DBAdapter(self.dbfile)
