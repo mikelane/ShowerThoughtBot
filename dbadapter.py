@@ -36,3 +36,8 @@ class DBAdapter:
                     c.execute('INSERT INTO thoughts VALUES (?, ?, ?, ?, ?, ?, ?)', item)
                 except IntegrityError:
                     pass
+
+    def getRandomThought(self):
+        with DBManager(self.file) as c:
+            c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
+            return c.fetchone()

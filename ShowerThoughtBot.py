@@ -14,6 +14,7 @@ import re, yaml
 from bot import Bot
 from reddit import Reddit
 from datetime import datetime
+from dbadapter import DBAdapter
 
 class ShowerThoughtBot(Bot):
     def __init__(self, file):
@@ -45,8 +46,10 @@ class ShowerThoughtBot(Bot):
             self.log.log(msg, "screen")
 
     def printShowerThought(self, chan, nick):
-        self.ircsock.send("PRIVMSG {} :I'm not quite ready yet, {}\r\n".format(
-            chan, nick).encode())
+        db = DBAdapter(self.dbfile)
+        thought = db.getRandomThought()
+        self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
+            chan, nick, thought[1], thought[2]).encode())
 
     def updateDB(self):
         now = datetime.now()
