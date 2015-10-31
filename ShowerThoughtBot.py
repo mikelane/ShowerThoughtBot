@@ -47,20 +47,25 @@ class ShowerThoughtBot(Bot):
               msg.find(":hi {}".format(self.nick)) != -1):
             logging.debug(msg)
             self.hello(chan, fromNick)
-        elif msg.find(":!showerthought") != -1:
+        elif (msg.find(":!showerthought") != -1 or
+              msg.find(":{}: thought".format(self.nick)) != -1 or
+              msg.find(":!stb thought") != -1):
             logging.debug(msg)
             self.printShowerThought(chan, fromNick)
         elif (msg.find(":{}: help".format(self.nick)) != -1 or
-              msg.find(":!help") != -1):
+              msg.find(":!stb help") != -1):
             logging.debug(msg)
             self.printHelp(chan)
-        elif msg.find(":!source") != -1:
+        elif (msg.find(":!stb source") != -1 or
+              msg.find(":{}: source".format(self.nick)) != -1):
             logging.debug(msg)
             self.printSourceLink(chan)
+        elif(msg.find(":{}: updatedb") != -1 and
+             fromNick == 'mlane'):
+            self.updateDB()
         else:
-        #     logging.debug(msg)
-
             return
+
 
     def printSourceLink(self, chan):
         self.socket_lock.acquire()
@@ -69,7 +74,10 @@ class ShowerThoughtBot(Bot):
 
     def printHelp(self, chan):
         self.socket_lock.acquire()
-        self.ircsock.send("PRIVMSG {} :Get a shower thought with !showerthought\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: <command>, !stb <command>, hello showerthoughtbot, and hi showerthoughtbot\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :Current commands are \"thought\", \"help\", and \"source\"\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :Or get a shower thought with !showerthought\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :More to come.\r\n".format(chan).encode())
         self.socket_lock.release()
 
     def printShowerThought(self, chan, nick):
@@ -82,16 +90,19 @@ class ShowerThoughtBot(Bot):
             chan, nick, thought[1], thought[2]).encode())
         self.socket_lock.release()
 
-    def updateDB(self):
-        now = datetime.now()
-        duration = now - self.update_time
-        duration = int(duration.total_seconds())
-        if duration >= 86400:
-            logging.debug('Updating database')
-            self.update_time = now
-            #self.db_lock.acquire()
+    def updateDB(self, Scheduled=True):
+        if Scheduled:
+            now = datetime.now()
+            duration = now - self.update_time
+            duration = int(duration.total_seconds())
+            if duration >= 86400:
+                logging.debug('Updating database on schedule.')
+                self.update_time = now
+                #self.db_lock.acquire()
+                self.reddit.getDailyTop()
+                #self.db_lock.release()
+        else:
             self.reddit.getDailyTop()
-            #self.db_lock.release()
             
     def messageHandler(self, message):
         logging.debug("messageHandler started with message " + message)
@@ -121,17 +132,8 @@ class ShowerThoughtBot(Bot):
     def run(self):
         threads = []
         while True:
-            logging.debug("len(threads) = " + str(len(threads)))
             while len(threads) > 0 and threads[0].isAlive:
                 threads.pop(0)
-            # for thread in threads:
-            #     if thread.isAlive():
-            #         pass
-            #     else:
-            #         del thread
-            # logging.debug("len(threads) = " + str(len(threads)))
-            # logging.debug("begining of REPL loop")
-            # initialize data structures
             buffer = ""
             messages = []
 
