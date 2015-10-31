@@ -154,6 +154,13 @@ class ShowerThoughtBot(Bot):
                     if not buffer.startswith(':'):
                         buffer = ':' + buffer
 
+                    # Sometimes the first 2 or 3 chars get missed. Better fix
+                    # that in the case of PINGs!
+                    if buffer.startswith(':ING'):
+                        buffer = buffer[:1] + 'P' + buffer[1:]
+                    elif buffer.startswith(':NG'):
+                        buffer = buffer[:1] + 'PI' + buffer[1:]
+
                     # Put the message into the list and clear the buffer
                     if not (buffer.startswith(":iss.cat.pdx.edu") or
                             buffer.startswith(":showerthoughtbot!")):
