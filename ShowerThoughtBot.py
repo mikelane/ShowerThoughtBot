@@ -32,8 +32,6 @@ class ShowerThoughtBot(Bot):
         self.dbfile = config['database']
         # Create a Reddit object to handle the Reddit-specific tasks.
         self.reddit = Reddit(self.dbfile)
-        self.socket_lock = threading.Lock()
-        self.db_lock = threading.Lock()
 
 
     def parseMessage(self, msg, chan, fromNick):
@@ -68,10 +66,10 @@ class ShowerThoughtBot(Bot):
         self.socket_lock.release()
 
     def printShowerThought(self, chan, nick):
-        self.db_lock.acquire()
+        # #self.db_lock.acquire()
         db = DBAdapter(self.dbfile)
         thought = db.getRandomThought()
-        self.db_lock.release()
+        # #self.db_lock.release()
         self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
             chan, nick, thought[1], thought[2]).encode())
@@ -84,53 +82,67 @@ class ShowerThoughtBot(Bot):
         if duration >= 86400:
             self.log.log('updating database', 'info')
             self.update_time = now
-            self.db_lock.acquire()
+            #self.db_lock.acquire()
             self.reddit.getDailyTop()
-            self.db_lock.release()
+            #self.db_lock.release()
+            
+    def messageHandler(self, message):
+        chan = re.search('(\#\w+ )', message)
+        if chan:
+            chan = chan.group(1)
+        fromNick = re.search('(\:\w+\!)', message)
+        if fromNick:
+            fromNick = fromNick.group(1).strip(':!')
+        self.parseMessage(message, chan, fromNick)
 
     # Run the bot!
     def run(self):
         threads = []
         while True:
-            self.updateDB()
-            # Gather some input
-            message = ''
+            # initialize data structures
+            buffer = ''
+            messages = []
+
+            # Acquire the socket lock
             self.socket_lock.acquire()
+
+            # prime the pump with first character and lookahead character
             c = self.ircsock.recv(1).decode()
             nextC = self.ircsock.recv(1).decode()
-            messages = []
-            while not nextC == '':
-                if c == '\r' and nextC == '\n' and len(message) > 0:
-                    messages.append(message)
-                    message.clear()
+
+            # gather input one char at a time
+            while not (c == '' or nextC == ''):
+                # If we've found the end of a message
+                if c == '\r' and nextC == '\n' and len(buffer) > 0:
+                    # Put the message into the list and clear the buffer
+                    messages.append(buffer)
+                    buffer.clear()
+
+                    # Gather the next character and the lookahead
                     c = self.ircsock.recv(1).decode()
+                    # if there is no next character, go and deal with the messages
+                    if c == '':
+                        break
                     nextC = self.ircsock.recv(1).decode()
-                message += c
+
+                # If the end of input hasn't been reached, append c to the buffer
+                # and move to the next character.
+                buffer += c
                 c = nextC
                 nextC = self.ircsock.recv(1).decode()
+
+            # release the lock
             self.socket_lock.release()
 
-            # @todo, this is where we spawn as many threads as there are messages
-            # @todo, and in those threads handle the message and then die.
-            # @todo, Note: acquire a lock to utilize socket. Also acquire lock to
-            # @todo, utilize the database
-
-            for i in range(len(messages)):
-                t = threading.Thread(target=messageHandler, args=(messages[i],))
+            # Start a thread to handle each of the received messages
+            for message in range(len(messages)):
+                t = threading.Thread(target=self.messageHandler, args=(message,))
                 threads.append(t)
                 t.start()
 
-            # Determine what channel the input is from
-            chan = re.search('(\#\w+ )', msg)
-            if chan:
-                chan = chan.group(1)
-                # Determine what user sent the message
-                fromNick = re.search('(\:\w+\!)', msg)
-                if fromNick:
-                    fromNick = fromNick.group(1)
-                    fromNick = fromNick.strip(':!')
-                    # If the message isn't empty, log it to the screen
-            self.parseMessage(msg, chan, fromNick)
+            # Start a thread to update the db if required.
+            updatedb = threading.Thread(name='DBUpdater', target=self.updateDB())
+            updatedb.start()
 
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')

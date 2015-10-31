@@ -31,7 +31,7 @@ class DBManager:
         Open the file when the context starts
         :return: A sqlite3 cursor.
         """
-        self.conn = sqlite3.connect(self.file)
+        self.conn = sqlite3.connect(self.file, check_same_thread=True)
         # Define and return the cursor to the context
         self.cursor = self.conn.cursor()
         return self.cursor

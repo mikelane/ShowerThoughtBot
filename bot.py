@@ -21,7 +21,7 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import socket, ssl, yaml, time
+import socket, ssl, yaml, time, threading
 from log import Log
 import atexit
 
@@ -32,6 +32,8 @@ class Bot:
             config = yaml.load(y)
 
         self.log = Log()
+        self.socket_lock = threading.Lock()
+        #self.db_lock = threading.Lock()
 
         # Store the configs in the Bot
         self.server    = config['server']
@@ -44,6 +46,7 @@ class Bot:
         self.s = socket.socket()
         self.s.connect((self.server, self.port))
         self.ircsock = ssl.wrap_socket(self.s)
+        self.socket_lock.acquire()
         self.ircsock.send("USER {} 0 * :{}\r\n".format(self.nick,
                                                        self.real_name).encode())
         self.ircsock.send("NICK {}\r\n".format(self.nick).encode())
@@ -55,24 +58,35 @@ class Bot:
         # Join all the channels specified in the config file
         for channel in self.channels:
             self.joinchan(channel['name'], channel['key'])
+        self.socket_lock.release()
 
         # Register a function to close the socket upon exit or interrupt
-        atexit.register(closeSocket, self.ircsock)
+        atexit.register(closeSocket, self.ircsock, self.socket_lock)
 
     def joinchan(self, chan, key):
+        self.socket_lock.acquire()
         self.ircsock.send("JOIN {} {}\r\n".format(chan, key).encode())
+        self.socket_lock.release()
 
     def ping(self):
+        self.socket_lock.acquire()
         self.ircsock.send("PONG :pingis\r\n".encode())
+        self.socket_lock.release()
 
     def sendmsg(self, chan, msg):
+        self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :{}\r\n".format(chan, msg).encode())
+        self.socket_lock.release()
 
     def hello(self, channel, nick):
+        self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :Hello, {}!\r\n".format(channel, nick).encode())
+        self.socket_lock.release()
 
-def closeSocket(socket):
+def closeSocket(socket, lock):
     l = Log()
     l.log('connection closed', 'info')
+    lock.acquire()
     socket.close()
+    lock.release()
 
