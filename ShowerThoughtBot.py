@@ -115,10 +115,21 @@ class ShowerThoughtBot(Bot):
 
         return character
 
+
+
     # Run the bot!
     def run(self):
         threads = []
         while True:
+            logging.debug("len(threads) = " + str(len(threads)))
+            while len(threads) > 0 and threads[0].isAlive:
+                threads.pop(0)
+            # for thread in threads:
+            #     if thread.isAlive():
+            #         pass
+            #     else:
+            #         del thread
+            # logging.debug("len(threads) = " + str(len(threads)))
             # logging.debug("begining of REPL loop")
             # initialize data structures
             buffer = ""
