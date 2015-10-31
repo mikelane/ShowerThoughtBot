@@ -10,11 +10,15 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import re, yaml, threading
+import re, yaml, threading, logging, ssl
 from bot import Bot
 from reddit import Reddit
 from datetime import datetime
 from dbadapter import DBAdapter
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    )
 
 
 class ShowerThoughtBot(Bot):
@@ -35,25 +39,28 @@ class ShowerThoughtBot(Bot):
 
 
     def parseMessage(self, msg, chan, fromNick):
+        # logging.debug("parseMessage starting with msg " + msg)
         if msg.find("PING :") != -1:
             self.ping()
         elif (msg.find(":hello {}".format(self.nick)) != -1 or
               msg.find(":hello, {}".format(self.nick)) != -1 or
               msg.find(":hi {}".format(self.nick)) != -1):
-            self.log.log(msg, "info")
+            logging.debug(msg)
             self.hello(chan, fromNick)
         elif msg.find(":!showerthought") != -1:
-            self.log.log(msg, "info")
+            logging.debug(msg)
             self.printShowerThought(chan, fromNick)
         elif (msg.find(":{}: help".format(self.nick)) != -1 or
               msg.find(":!help") != -1):
-            self.log.log(msg, "info")
+            logging.debug(msg)
             self.printHelp(chan)
         elif msg.find(":!source") != -1:
-            self.log.log(msg, "info")
+            logging.debug(msg)
             self.printSourceLink(chan)
         else:
-            self.log.log(msg, "screen")
+        #     logging.debug(msg)
+
+            return
 
     def printSourceLink(self, chan):
         self.socket_lock.acquire()
@@ -80,64 +87,86 @@ class ShowerThoughtBot(Bot):
         duration = now - self.update_time
         duration = int(duration.total_seconds())
         if duration >= 86400:
-            self.log.log('updating database', 'info')
+            logging.debug('Updating database')
             self.update_time = now
             #self.db_lock.acquire()
             self.reddit.getDailyTop()
             #self.db_lock.release()
             
     def messageHandler(self, message):
+        logging.debug("messageHandler started with message " + message)
         chan = re.search('(\#\w+ )', message)
         if chan:
             chan = chan.group(1)
         fromNick = re.search('(\:\w+\!)', message)
         if fromNick:
-            fromNick = fromNick.group(1).strip(':!')
+            fromNick = fromNick.group(1)
+            fromNick = fromNick.strip(':!')
         self.parseMessage(message, chan, fromNick)
+        # logging.debug("messageHandler ending")
+        return
+
+    def getNextChar(self):
+        """Must posses socket_lock when executing this function!"""
+        try:
+            character = self.ircsock.recv(1).decode()
+        except ssl.SSLWantReadError:
+            character = ''
+
+        return character
 
     # Run the bot!
     def run(self):
         threads = []
         while True:
+            # logging.debug("begining of REPL loop")
             # initialize data structures
-            buffer = ''
+            buffer = ""
             messages = []
 
             # Acquire the socket lock
             self.socket_lock.acquire()
 
             # prime the pump with first character and lookahead character
-            c = self.ircsock.recv(1).decode()
-            nextC = self.ircsock.recv(1).decode()
+            c0 = self.getNextChar()
+            c1 = self.getNextChar()
 
             # gather input one char at a time
-            while not (c == '' or nextC == ''):
+            while c0 != '':
+                # logging.debug("Inner REPL")
                 # If we've found the end of a message
-                if c == '\r' and nextC == '\n' and len(buffer) > 0:
-                    # Put the message into the list and clear the buffer
-                    messages.append(buffer)
-                    buffer.clear()
+                if c0 == '\r' and c1 == '\n':
+                    # sometimes the first character (':') doesn't make it in. So add it
+                    # since all IRC messages start with a ':'.
+                    if not buffer.startswith(':'):
+                        buffer = ':' + buffer
 
-                    # Gather the next character and the lookahead
-                    c = self.ircsock.recv(1).decode()
-                    # if there is no next character, go and deal with the messages
-                    if c == '':
-                        break
-                    nextC = self.ircsock.recv(1).decode()
+                    # Put the message into the list and clear the buffer
+                    if not (buffer.startswith(":iss.cat.pdx.edu") or
+                            buffer.startswith(":showerthoughtbot!")):
+                        logging.debug("buffer is " + buffer)
+                        messages.append(buffer)
+                    buffer = ""
 
                 # If the end of input hasn't been reached, append c to the buffer
                 # and move to the next character.
-                buffer += c
-                c = nextC
-                nextC = self.ircsock.recv(1).decode()
+                buffer += c0
+                if c1 == '\n':
+                    c0 = self.getNextChar()
+                else:
+                    c0 = c1
+
+                c1 = self.getNextChar()
 
             # release the lock
+            # logging.debug("Releasing socket lock")
             self.socket_lock.release()
 
-            # Start a thread to handle each of the received messages
-            for message in range(len(messages)):
-                t = threading.Thread(target=self.messageHandler, args=(message,))
+            for m in messages:
+                # Start a thread to handle each of the received messages
+                t = threading.Thread(target=self.messageHandler, args=(m,))
                 threads.append(t)
+                # logging.debug("Starting messageHandler")
                 t.start()
 
             # Start a thread to update the db if required.
