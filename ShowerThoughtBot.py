@@ -107,7 +107,8 @@ class ShowerThoughtBot(Bot):
 
     def print_help(self, chan):
         lines = []
-        lines.append("I respond to {}: $command".format(self.nick))
+        lines.append("I respond to {}: $command or !stb command".format(
+            self.nick))
         lines.append("$command = [help|thought|source]")
         lines.append("Get a shower thought with !showerthought.")
         lines.append("More to come...")
