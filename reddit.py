@@ -14,9 +14,6 @@ __license__ = 'GPLv3'
 import praw, os.path, logging
 from dbadapter import DBAdapter
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    )
 
 class Reddit:
     """The Reddit object will handle seeding the database with shower thoughts
@@ -28,15 +25,15 @@ class Reddit:
         self.reddit = praw.Reddit(self.user_agent)
         self.dbfile = dbfile
         if not os.path.isfile(dbfile):
-            self.seedDB()
+            self.seed_database()
 
-    def seedDB(self,):
-        self.getSubmissions('all')
+    def seed_database(self,):
+        self.get_submissions('all')
 
-    def getDailyTop(self):
-        self.getSubmissions('day')
+    def get_daily_top(self):
+        self.get_submissions('day')
 
-    def getSubmissions(self, timeframe):
+    def get_submissions(self, timeframe):
         submission_list = []
         db = DBAdapter(self.dbfile)
         if timeframe == 'all':
@@ -58,7 +55,7 @@ class Reddit:
             submission_list.append((None, text, author, date, link, id, 0))
 
         logging.debug("Inserting " + str(len(submission_list)) + " thoughts into the database")
-        db.insertThoughts(submission_list)
+        db.insert_thoughts(submission_list)
 
 if __name__ == '__main__':
     r = Reddit('test.db')

@@ -23,9 +23,6 @@ __license__ = 'GPLv3'
 
 import socket, ssl, yaml, time, threading, logging, atexit
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    )
 
 class Bot:
     def __init__(self, file):
@@ -50,8 +47,10 @@ class Bot:
         self.ircsock.setblocking(0)
         self.socket_lock.acquire()
         self.ircsock.send("USER {} 0 * :{}\r\n".format(self.nick,
-                                                       self.real_name).encode())
-        self.ircsock.send("NICK {}\r\n".format(self.nick).encode())
+                                                       self.real_name)
+                           .encode('utf-8', 'surrogateescape'))
+        self.ircsock.send("NICK {}\r\n".format(self.nick).encode('utf-8',
+                                                             'surrogateescape'))
         self.socket_lock.release()
         # Have to sleep for a couple of potatoes so you don't try to join too early
         # @todo do a callback lambda instead?
@@ -59,34 +58,27 @@ class Bot:
 
         # Join all the channels specified in the config file
         for channel in self.channels:
-            self.joinchan(channel['name'], channel['key'])
+            self.join_channel(channel['name'], channel['key'])
 
         # Register a function to close the socket upon exit or interrupt
-        atexit.register(closeSocket, self.ircsock, self.socket_lock)
+        atexit.register(closeSocket, self.ircsock)
 
-    def joinchan(self, chan, key):
-        self.socket_lock.acquire()
-        self.ircsock.send("JOIN {} {}\r\n".format(chan, key).encode())
-        self.socket_lock.release()
+    def join_channel(self, chan, key):
+        self.ircsock.send("JOIN {} {}\r\n".format(chan, key).encode('utf-8',
+                                                             'surrogateescape'))
 
     def ping(self):
-        self.socket_lock.acquire()
-        self.ircsock.send("PONG :pingis\r\n".encode())
-        self.socket_lock.release()
+        self.ircsock.send("PONG :pingis\r\n".encode('utf-8', 'surrogateescape'))
 
-    def sendmsg(self, chan, msg):
-        self.socket_lock.acquire()
-        self.ircsock.send("PRIVMSG {} :{}\r\n".format(chan, msg).encode())
-        self.socket_lock.release()
+    def send_message(self, chan, msg):
+        self.ircsock.send("PRIVMSG {} :{}\r\n".format(chan, msg).encode(
+             'utf-8', 'surrogateescape'))
 
     def hello(self, channel, nick):
-        self.socket_lock.acquire()
-        self.ircsock.send("PRIVMSG {} :Hello, {}!\r\n".format(channel, nick).encode())
-        self.socket_lock.release()
+        self.ircsock.send("PRIVMSG {} :Hello, {}!\r\n".format(channel, nick)
+                          .encode('utf-8', 'surrogateescape'))
 
-def closeSocket(socket, lock):
+def closeSocket(socket):
     logging.debug('Closing socket')
-    lock.acquire()
     socket.close()
-    lock.release()
 

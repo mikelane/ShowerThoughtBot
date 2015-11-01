@@ -15,10 +15,15 @@ from reddit import Reddit
 from datetime import datetime
 from dbadapter import DBAdapter
 
+# set up logging to file - see previous section for more details
+date = datetime.now()
+date = date.strftime('%Y-%W')
+LOG_FILE = "logs/{DATE}.log".format(DATE=date)
 logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] %(message)s',
-                    )
-
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename=LOG_FILE,
+                    filemode='a')
 
 class ShowerThoughtBot(Bot):
     def __init__(self, file):
@@ -104,7 +109,7 @@ class ShowerThoughtBot(Bot):
     def print_shower_thought(self, chan, nick):
         # #self.db_lock.acquire()
         db = DBAdapter(self.dbfile)
-        thought = db.getRandomThought()
+        thought = db.get_random_thought()
         # #self.db_lock.release()
         self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
             chan, nick, thought[1], thought[2]).encode('utf-8',
@@ -126,10 +131,10 @@ class ShowerThoughtBot(Bot):
                 logging.debug('Updating database on schedule.')
                 self.update_time = now
                 #self.db_lock.acquire()
-                self.reddit.getDailyTop()
+                self.reddit.get_daily_top()
                 #self.db_lock.release()
         else:
-            self.reddit.getDailyTop()
+            self.reddit.get_daily_top()
 
 
     def message_handler(self, message):

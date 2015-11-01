@@ -10,7 +10,8 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import sqlite3
+import sqlite3, logging
+
 
 class DBManager:
     """Manage the opening and closing of the sqlite3 database. Use python3
@@ -26,6 +27,7 @@ class DBManager:
         self.conn = None
         self.cursor = None
 
+
     def __enter__(self):
         """
         Open the file when the context starts
@@ -35,6 +37,7 @@ class DBManager:
         # Define and return the cursor to the context
         self.cursor = self.conn.cursor()
         return self.cursor
+
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """

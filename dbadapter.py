@@ -10,15 +10,18 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
+import logging
 from dbmanager import DBManager
 from sqlite3 import IntegrityError
+
 
 class DBAdapter:
     def __init__(self, file):
         self.file = file
-        self.createDB()
+        self.create_database()
 
-    def createDB(self):
+
+    def create_database(self):
         with DBManager(self.file) as c:
             c.execute('''CREATE TABLE IF NOT EXISTS thoughts
                   (id INTEGER PRIMARY KEY,
@@ -29,7 +32,8 @@ class DBAdapter:
                   Reddit_ID TEXT,
                   score INTEGER)''')
 
-    def insertThoughts(self, data):
+
+    def insert_thoughts(self, data):
         with DBManager(self.file) as c:
             for item in data:
                 try:
@@ -37,7 +41,8 @@ class DBAdapter:
                 except IntegrityError:
                     pass
 
-    def getRandomThought(self):
+
+    def get_random_thought(self):
         with DBManager(self.file) as c:
             c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
             return c.fetchone()
