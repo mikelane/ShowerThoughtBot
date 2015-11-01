@@ -37,8 +37,8 @@ class ShowerThoughtBot(Bot):
         self.reddit = Reddit(self.dbfile)
 
 
-    def parseMessage(self, msg, chan, fromNick):
-        # logging.debug("parseMessage starting with msg " + msg)
+    def parse_message(self, msg, chan, fromNick):
+        # logging.debug("parse_message starting with msg " + msg)
         if msg.find("PING :") != -1:
             self.ping()
         elif (msg.find(":hello {}".format(self.nick)) != -1 or
@@ -50,15 +50,15 @@ class ShowerThoughtBot(Bot):
               msg.find(":{}: thought".format(self.nick)) != -1 or
               msg.find(":!stb thought") != -1):
             logging.debug(msg)
-            self.printShowerThought(chan, fromNick)
+            self.print_shower_thought(chan, fromNick)
         elif (msg.find(":{}: help".format(self.nick)) != -1 or
               msg.find(":!stb help") != -1):
             logging.debug(msg)
-            self.printHelp(chan)
+            self.print_help(chan)
         elif (msg.find(":!stb source") != -1 or
               msg.find(":{}: source".format(self.nick)) != -1):
             logging.debug(msg)
-            self.printSourceLink(chan)
+            self.print_source_link(chan)
         elif msg.find(":{}: updatedb".format(self.nick)) != -1:
             if not fromNick == 'mlane':
                 self.ircsock.send("PRIVMSG {} :Don't tell me what to "
@@ -68,24 +68,24 @@ class ShowerThoughtBot(Bot):
                 self.ircsock.send("PRIVMSG {} :Pulling in some "
                                   "thoughts.\r\n".format(chan).encode(
                     'utf-8', 'surrogateescape'))
-                self.updateDB(False)
+                self.update_database(False)
                 self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower "
                                   "thoughts\r\n".format(chan).encode('utf-8',
                                   'surrogateescape'))
         elif msg.find(":{}: shruggie".format(self.nick)) != -1:
             logging.debug("trying to print shruggie")
-            self.printShruggie(chan)
+            self.print_shruggie(chan)
         else:
             return
 
 
-    def printSourceLink(self, chan):
+    def print_source_link(self, chan):
         self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, "
                           "https://github.com/mikelane/ShowerThoughtBot\r\n"
                           .format(chan).encode('utf-8', 'surrogateescape'))
 
 
-    def printHelp(self, chan):
+    def print_help(self, chan):
         self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: "
                           "<command>, !stb <command>, hello "
                           "showerthoughtbot, and hi "
@@ -101,7 +101,7 @@ class ShowerThoughtBot(Bot):
             chan).encode('utf-8', 'surrogateescape'))
 
 
-    def printShowerThought(self, chan, nick):
+    def print_shower_thought(self, chan, nick):
         # #self.db_lock.acquire()
         db = DBAdapter(self.dbfile)
         thought = db.getRandomThought()
@@ -111,13 +111,13 @@ class ShowerThoughtBot(Bot):
                                                         'surrogateescape'))
 
 
-    def printShruggie(self, chan):
+    def print_shruggie(self, chan):
         self.ircsock.send("PRIVMSG {} : \udcc2\udcaf\_("
                           "\udce3\udc83\udc84)_/\udcc2\udcaf\r\n".format(
             chan).encode('utf-8', 'surrogateescape'))
 
 
-    def updateDB(self, Scheduled=True):
+    def update_database(self, Scheduled=True):
         if Scheduled:
             now = datetime.now()
             duration = now - self.update_time
@@ -131,9 +131,12 @@ class ShowerThoughtBot(Bot):
         else:
             self.reddit.getDailyTop()
 
-            
-    def messageHandler(self, message):
-        logging.debug("messageHandler started with message " + message)
+
+    def message_handler(self, message):
+        """The message handler breaks out the channel and nick of the sender
+        and passes this on to the parser.
+        """
+        logging.debug("message_handler started with message " + message)
         chan = re.search('(\#\w+ )', message)
         if chan:
             chan = chan.group(1)
@@ -141,8 +144,7 @@ class ShowerThoughtBot(Bot):
         if fromNick:
             fromNick = fromNick.group(1)
             fromNick = fromNick.strip(':!')
-        self.parseMessage(message, chan, fromNick)
-        # logging.debug("messageHandler ending")
+        self.parse_message(message, chan, fromNick)
         return
 
 
@@ -165,8 +167,8 @@ class ShowerThoughtBot(Bot):
                 messages = buffer.splitlines()
                 buffer = ""
             while len(messages) > 0:
-                self.messageHandler(messages.pop(0))
-            self.updateDB()
+                self.message_handler(messages.pop(0))
+            self.update_database()
 
 
 # Initialize a bot!
