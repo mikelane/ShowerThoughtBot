@@ -14,6 +14,7 @@ import logging
 from dbmanager import DBManager
 from sqlite3 import IntegrityError
 
+logger = logging.getLogger('ShowerThoughtBot')
 
 class DBAdapter:
     def __init__(self, file):

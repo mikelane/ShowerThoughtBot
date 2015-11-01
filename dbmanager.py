@@ -12,6 +12,7 @@ __license__ = 'GPLv3'
 
 import sqlite3, logging
 
+logger = logging.getLogger('ShowerThoughtBot')
 
 class DBManager:
     """Manage the opening and closing of the sqlite3 database. Use python3

@@ -23,6 +23,7 @@ __license__ = 'GPLv3'
 
 import socket, ssl, yaml, time, threading, logging, atexit
 
+logger = logging.getLogger('ShowerThoughtBot')
 
 class Bot:
     def __init__(self, file):
@@ -63,11 +64,23 @@ class Bot:
         # Register a function to close the socket upon exit or interrupt
         atexit.register(closeSocket, self.ircsock)
 
+
+    def read(self, buffsize=4096):
+        buffer = ""
+        while True:
+            try:
+                buffer += self.ircsock.recv(buffsize).decode('utf-8',
+                                                             'surrogateescape')
+            except ssl.SSLWantReadError:
+                return buffer
+
+
     def join_channel(self, chan, key):
         self.ircsock.send("JOIN {} {}\r\n".format(chan, key).encode('utf-8',
                                                              'surrogateescape'))
 
     def ping(self):
+        logger.debug("Sending PONG")
         self.ircsock.send("PONG :pingis\r\n".encode('utf-8', 'surrogateescape'))
 
     def send_message(self, chan, msg):
@@ -79,6 +92,6 @@ class Bot:
                           .encode('utf-8', 'surrogateescape'))
 
 def closeSocket(socket):
-    logging.debug('Closing socket')
+    logger.warning('Closing socket')
     socket.close()
 

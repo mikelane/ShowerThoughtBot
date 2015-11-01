@@ -14,6 +14,7 @@ __license__ = 'GPLv3'
 import praw, os.path, logging
 from dbadapter import DBAdapter
 
+logger = logging.getLogger('ShowerThoughtBot')
 
 class Reddit:
     """The Reddit object will handle seeding the database with shower thoughts

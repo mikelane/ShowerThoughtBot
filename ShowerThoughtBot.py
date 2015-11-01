@@ -9,21 +9,42 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import re, yaml, threading, logging, ssl
+import re, yaml, logging, ssl, getopt, sys
 from bot import Bot
 from reddit import Reddit
 from datetime import datetime
 from dbadapter import DBAdapter
 
 # set up logging to file - see previous section for more details
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "d")
+except getopt.GetoptError:
+    print("Usage: arguments are -d or --debug=(on|off)")
+    exit(2)
+
+LOG_LEVEL = "INFO"
+for opt, arg in opts:
+    if opt == '-d':
+        LOG_LEVEL = "DEBUG"
+logger = logging.getLogger('ShowerThoughtBot')
+logger.setLevel(logging.getLevelName(LOG_LEVEL))
+# create a file handler to log WARNING and higher
 date = datetime.now()
 date = date.strftime('%Y-%W')
 LOG_FILE = "logs/{DATE}.log".format(DATE=date)
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=LOG_FILE,
-                    filemode='a')
+fh = logging.FileHandler(LOG_FILE)
+fh.setLevel(logging.WARNING)
+# create a console handler to handle all log levels
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create a formatter
+formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %('
+                              'message)s', '%H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(ch)
+logger.addHandler(fh)
 
 class ShowerThoughtBot(Bot):
     def __init__(self, file):
@@ -43,83 +64,68 @@ class ShowerThoughtBot(Bot):
 
 
     def parse_message(self, msg, chan, fromNick):
-        # logging.debug("parse_message starting with msg " + msg)
+        # logger.debug("parse_message starting with msg " + msg)
         if msg.find("PING :") != -1:
             self.ping()
         elif (msg.find(":hello {}".format(self.nick)) != -1 or
               msg.find(":hello, {}".format(self.nick)) != -1 or
               msg.find(":hi {}".format(self.nick)) != -1):
-            logging.debug(msg)
+            logger.info(msg)
             self.hello(chan, fromNick)
         elif (msg.find(":!showerthought") != -1 or
               msg.find(":{}: thought".format(self.nick)) != -1 or
               msg.find(":!stb thought") != -1):
-            logging.debug(msg)
+            logger.info(msg)
             self.print_shower_thought(chan, fromNick)
         elif (msg.find(":{}: help".format(self.nick)) != -1 or
               msg.find(":!stb help") != -1):
-            logging.debug(msg)
+            logger.info(msg)
             self.print_help(chan)
         elif (msg.find(":!stb source") != -1 or
               msg.find(":{}: source".format(self.nick)) != -1):
-            logging.debug(msg)
+            logger.info(msg)
             self.print_source_link(chan)
         elif msg.find(":{}: updatedb".format(self.nick)) != -1:
             if not fromNick == 'mlane':
-                self.ircsock.send("PRIVMSG {} :Don't tell me what to "
-                                  "do!\r\n".format(chan).encode('utf-8',
-                                                             'surrogateescape'))
+                self.send_message(chan, "Don't tell me what to do!")
             else:
-                self.ircsock.send("PRIVMSG {} :Pulling in some "
-                                  "thoughts.\r\n".format(chan).encode(
-                    'utf-8', 'surrogateescape'))
+                self.send_message(chan, "Pulling in some thoughts.")
                 self.update_database(False)
-                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower "
-                                  "thoughts\r\n".format(chan).encode('utf-8',
-                                  'surrogateescape'))
         elif msg.find(":{}: shruggie".format(self.nick)) != -1:
-            logging.debug("trying to print shruggie")
+            logger.debug("trying to print shruggie")
             self.print_shruggie(chan)
         else:
+            logger.info(msg)
             return
 
 
     def print_source_link(self, chan):
-        self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, "
-                          "https://github.com/mikelane/ShowerThoughtBot\r\n"
-                          .format(chan).encode('utf-8', 'surrogateescape'))
+        self.send_message(chan, "ShowerThoughtBot is by Mike Lane, "
+                                "https://github.com/mikelane/ShowerThoughtBot")
 
 
     def print_help(self, chan):
-        self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: "
+        self.send_message(chan, "I respond to showerthoughtbot: "
                           "<command>, !stb <command>, hello "
                           "showerthoughtbot, and hi "
-                          "showerthoughtbot\r\n".format(chan).encode(
-            'utf-8', 'surrogateescape'))
-        self.ircsock.send("PRIVMSG {} :Current commands are \"thought\", "
-                          "\"help\", and \"source\"\r\n".format(
-            chan).encode('utf-8', 'surrogateescape'))
-        self.ircsock.send("PRIVMSG {} :Or get a shower thought with "
-                          "!showerthought\r\n".format(chan).encode('utf-8',
-                                                             'surrogateescape'))
-        self.ircsock.send("PRIVMSG {} :More to come.\r\n".format(
-            chan).encode('utf-8', 'surrogateescape'))
+                          "showerthoughtbot")
+        self.send_message(chan, "Current commands are \"thought\", \"help\", "
+                                "and \"source\".")
+        self.send_message(chan, "Or get a shower thought with !showerthought.")
+        self.send_message(chan, "More to come")
 
 
     def print_shower_thought(self, chan, nick):
         # #self.db_lock.acquire()
         db = DBAdapter(self.dbfile)
         thought = db.get_random_thought()
-        # #self.db_lock.release()
-        self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
-            chan, nick, thought[1], thought[2]).encode('utf-8',
-                                                        'surrogateescape'))
+        self.send_message(chan, "okay {}: \"{}\" -{}\r\n".format(
+            nick, thought[1], thought[2]))
 
 
     def print_shruggie(self, chan):
-        self.ircsock.send("PRIVMSG {} : \udcc2\udcaf\_("
-                          "\udce3\udc83\udc84)_/\udcc2\udcaf\r\n".format(
-            chan).encode('utf-8', 'surrogateescape'))
+        self.send_message(chan, "\udcc2\udcaf\_("
+                          "\udce3\udc83\udc84)_/\udcc2\udcaf")
 
 
     def update_database(self, Scheduled=True):
@@ -128,7 +134,7 @@ class ShowerThoughtBot(Bot):
             duration = now - self.update_time
             duration = int(duration.total_seconds())
             if duration >= 86400:
-                logging.debug('Updating database on schedule.')
+                logger.info('Updating database on schedule.')
                 self.update_time = now
                 #self.db_lock.acquire()
                 self.reddit.get_daily_top()
@@ -141,7 +147,7 @@ class ShowerThoughtBot(Bot):
         """The message handler breaks out the channel and nick of the sender
         and passes this on to the parser.
         """
-        logging.debug("message_handler started with message " + message)
+        logger.debug("message_handler started with message " + message)
         chan = re.search('(\#\w+ )', message)
         if chan:
             chan = chan.group(1)
@@ -151,16 +157,6 @@ class ShowerThoughtBot(Bot):
             fromNick = fromNick.strip(':!')
         self.parse_message(message, chan, fromNick)
         return
-
-
-    def read(self, buffsize=4096):
-        buffer = ""
-        while True:
-            try:
-                buffer += self.ircsock.recv(buffsize).decode('utf-8',
-                                                             'surrogateescape')
-            except ssl.SSLWantReadError:
-                return buffer
 
 
     # Run the bot!
