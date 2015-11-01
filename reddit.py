@@ -11,8 +11,12 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import praw, os.path
+import praw, os.path, logging
 from dbadapter import DBAdapter
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    )
 
 class Reddit:
     """The Reddit object will handle seeding the database with shower thoughts
@@ -42,7 +46,7 @@ class Reddit:
             submissions = self.reddit.get_subreddit(
                 'showerthoughts').get_top_from_day(limit=5)
         else:
-            print("WARNING: I don't know what submissions to get!")
+            logging.debug("Invalid timeframe")
             return
 
         for submission in submissions:
@@ -53,6 +57,7 @@ class Reddit:
             id = submission.id
             submission_list.append((None, text, author, date, link, id, 0))
 
+        logging.debug("Inserting " + str(len(submission_list)) + " thoughts into the database")
         db.insertThoughts(submission_list)
 
 if __name__ == '__main__':

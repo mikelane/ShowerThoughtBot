@@ -62,36 +62,31 @@ class ShowerThoughtBot(Bot):
             self.printSourceLink(chan)
         elif msg.find(":{}: updatedb") != -1:
             if not fromNick == 'mlane':
-                self.ircsock.send("PRIVMSG {} :Don't tell me what to do!".format(chan).encode())
+                self.ircsock.send("PRIVMSG {} :Don't tell me what to do!\r\n".format(chan).encode())
             else:
+                self.ircsock.send("PRIVMSG {} :Pulling in some thoughts.\r\n".format(chan).encode())
                 self.updateDB(False)
-                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower thoughts".format(chan).encode())
+                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower thoughts\r\n".format(chan).encode())
         else:
             return
 
 
     def printSourceLink(self, chan):
-        self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, https://github.com/mikelane/ShowerThoughtBot\r\n".format(chan).encode())
-        self.socket_lock.release()
 
     def printHelp(self, chan):
-        self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: <command>, !stb <command>, hello showerthoughtbot, and hi showerthoughtbot\r\n".format(chan).encode())
         self.ircsock.send("PRIVMSG {} :Current commands are \"thought\", \"help\", and \"source\"\r\n".format(chan).encode())
         self.ircsock.send("PRIVMSG {} :Or get a shower thought with !showerthought\r\n".format(chan).encode())
         self.ircsock.send("PRIVMSG {} :More to come.\r\n".format(chan).encode())
-        self.socket_lock.release()
 
     def printShowerThought(self, chan, nick):
         # #self.db_lock.acquire()
         db = DBAdapter(self.dbfile)
         thought = db.getRandomThought()
         # #self.db_lock.release()
-        self.socket_lock.acquire()
         self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
             chan, nick, thought[1], thought[2]).encode())
-        self.socket_lock.release()
 
     def updateDB(self, Scheduled=True):
         if Scheduled:
@@ -121,7 +116,6 @@ class ShowerThoughtBot(Bot):
         return
 
     def getNextChar(self):
-        """Must posses socket_lock when executing this function!"""
         try:
             character = self.ircsock.recv(1).decode('latin-1')
         except ssl.SSLWantReadError:
@@ -133,15 +127,9 @@ class ShowerThoughtBot(Bot):
 
     # Run the bot!
     def run(self):
-        threads = []
         while True:
-            while len(threads) > 0 and threads[0].isAlive:
-                threads.pop(0)
             buffer = ""
             messages = []
-
-            # Acquire the socket lock
-            self.socket_lock.acquire()
 
             # prime the pump with first character and lookahead character
             c0 = self.getNextChar()
@@ -180,10 +168,6 @@ class ShowerThoughtBot(Bot):
                     c0 = c1
 
                 c1 = self.getNextChar()
-
-            # release the lock
-            # logging.debug("Releasing socket lock")
-            self.socket_lock.release()
 
             while len(messages) > 0:
                 self.messageHandler(messages.pop(0))
