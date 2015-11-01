@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 My extension of the Bot object. This sets up a database with shower thoughts
 and handles the functions that are more specialized to the Shower Thought Bot.
@@ -17,7 +16,7 @@ from datetime import datetime
 from dbadapter import DBAdapter
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    format='[%(levelname)s] %(message)s',
                     )
 
 
@@ -62,23 +61,45 @@ class ShowerThoughtBot(Bot):
             self.printSourceLink(chan)
         elif msg.find(":{}: updatedb".format(self.nick)) != -1:
             if not fromNick == 'mlane':
-                self.ircsock.send("PRIVMSG {} :Don't tell me what to do!\r\n".format(chan).encode())
+                self.ircsock.send("PRIVMSG {} :Don't tell me what to "
+                                  "do!\r\n".format(chan).encode('utf-8',
+                                                             'surrogateescape'))
             else:
-                self.ircsock.send("PRIVMSG {} :Pulling in some thoughts.\r\n".format(chan).encode())
+                self.ircsock.send("PRIVMSG {} :Pulling in some "
+                                  "thoughts.\r\n".format(chan).encode(
+                    'utf-8', 'surrogateescape'))
                 self.updateDB(False)
-                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower thoughts\r\n".format(chan).encode())
+                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower "
+                                  "thoughts\r\n".format(chan).encode('utf-8',
+                                  'surrogateescape'))
+        elif msg.find(":{}: shruggie".format(self.nick)) != -1:
+            logging.debug("trying to print shruggie")
+            self.printShruggie(chan)
         else:
             return
 
 
     def printSourceLink(self, chan):
-        self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, https://github.com/mikelane/ShowerThoughtBot\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :ShowerThoughtBot is by Mike Lane, "
+                          "https://github.com/mikelane/ShowerThoughtBot\r\n"
+                          .format(chan).encode('utf-8', 'surrogateescape'))
+
 
     def printHelp(self, chan):
-        self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: <command>, !stb <command>, hello showerthoughtbot, and hi showerthoughtbot\r\n".format(chan).encode())
-        self.ircsock.send("PRIVMSG {} :Current commands are \"thought\", \"help\", and \"source\"\r\n".format(chan).encode())
-        self.ircsock.send("PRIVMSG {} :Or get a shower thought with !showerthought\r\n".format(chan).encode())
-        self.ircsock.send("PRIVMSG {} :More to come.\r\n".format(chan).encode())
+        self.ircsock.send("PRIVMSG {} :I respond to showerthoughtbot: "
+                          "<command>, !stb <command>, hello "
+                          "showerthoughtbot, and hi "
+                          "showerthoughtbot\r\n".format(chan).encode(
+            'utf-8', 'surrogateescape'))
+        self.ircsock.send("PRIVMSG {} :Current commands are \"thought\", "
+                          "\"help\", and \"source\"\r\n".format(
+            chan).encode('utf-8', 'surrogateescape'))
+        self.ircsock.send("PRIVMSG {} :Or get a shower thought with "
+                          "!showerthought\r\n".format(chan).encode('utf-8',
+                                                             'surrogateescape'))
+        self.ircsock.send("PRIVMSG {} :More to come.\r\n".format(
+            chan).encode('utf-8', 'surrogateescape'))
+
 
     def printShowerThought(self, chan, nick):
         # #self.db_lock.acquire()
@@ -86,7 +107,15 @@ class ShowerThoughtBot(Bot):
         thought = db.getRandomThought()
         # #self.db_lock.release()
         self.ircsock.send("PRIVMSG {} :okay {}: \"{}\" -{}\r\n".format(
-            chan, nick, thought[1], thought[2]).encode())
+            chan, nick, thought[1], thought[2]).encode('utf-8',
+                                                        'surrogateescape'))
+
+
+    def printShruggie(self, chan):
+        self.ircsock.send("PRIVMSG {} : \udcc2\udcaf\_("
+                          "\udce3\udc83\udc84)_/\udcc2\udcaf\r\n".format(
+            chan).encode('utf-8', 'surrogateescape'))
+
 
     def updateDB(self, Scheduled=True):
         if Scheduled:
@@ -101,6 +130,7 @@ class ShowerThoughtBot(Bot):
                 #self.db_lock.release()
         else:
             self.reddit.getDailyTop()
+
             
     def messageHandler(self, message):
         logging.debug("messageHandler started with message " + message)
@@ -115,75 +145,30 @@ class ShowerThoughtBot(Bot):
         # logging.debug("messageHandler ending")
         return
 
-    def getNextChar(self):
-        try:
-            character = self.ircsock.recv(1).decode('latin-1')
-        except ssl.SSLWantReadError:
-            character = ''
 
-        return character
-
+    def read(self, buffsize=4096):
+        buffer = ""
+        while True:
+            try:
+                buffer += self.ircsock.recv(buffsize).decode('utf-8',
+                                                             'surrogateescape')
+            except ssl.SSLWantReadError:
+                return buffer
 
 
     # Run the bot!
     def run(self):
+        messages = []
         while True:
-            buffer = ""
-            messages = []
-
-            # prime the pump with first character and lookahead character
-            c0 = self.getNextChar()
-            c1 = self.getNextChar()
-
-            # gather input one char at a time
-            while c0 != '':
-                # logging.debug("Inner REPL")
-                # If we've found the end of a message
-                if c0 == '\r' and c1 == '\n':
-                    # sometimes the first character (':') doesn't make it in. So add it
-                    # since all IRC messages start with a ':'.
-                    if not buffer.startswith(':'):
-                        buffer = ':' + buffer
-
-                    # Sometimes the first 2 or 3 chars get missed. Better fix
-                    # that in the case of PINGs!
-                    if buffer.startswith(':ING'):
-                        buffer = buffer[:1] + 'P' + buffer[1:]
-                    elif buffer.startswith(':NG'):
-                        buffer = buffer[:1] + 'PI' + buffer[1:]
-
-                    # Put the message into the list and clear the buffer
-                    if not (buffer.startswith(":iss.cat.pdx.edu") or
-                            buffer.startswith(":showerthoughtbot!")):
-                        logging.debug("buffer is " + buffer)
-                        messages.append(buffer)
-                    buffer = ""
-
-                # If the end of input hasn't been reached, append c to the buffer
-                # and move to the next character.
-                buffer += c0
-                if c1 == '\n':
-                    c0 = self.getNextChar()
-                else:
-                    c0 = c1
-
-                c1 = self.getNextChar()
-
+            buffer = self.read()
+            if len(buffer) > 0:
+                messages = buffer.splitlines()
+                buffer = ""
             while len(messages) > 0:
                 self.messageHandler(messages.pop(0))
-            # for m in messages:
-                # Start a thread to handle each of the received messages
-                # t = threading.Thread(target=self.messageHandler, args=(m,))
-                # threads.append(t)
-                # logging.debug("Starting messageHandler")
-                # t.start()
-
-
-            # Start a thread to update the db if required.
-            # updatedb = threading.Thread(name='DBUpdater', target=self.updateDB())
-            # updatedb.start()
-
             self.updateDB()
+
+
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')
 bot.run()
