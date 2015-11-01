@@ -120,7 +120,7 @@ class ShowerThoughtBot(Bot):
     def getNextChar(self):
         """Must posses socket_lock when executing this function!"""
         try:
-            character = self.ircsock.recv(1).decode()
+            character = self.ircsock.recv(1).decode('latin-1')
         except ssl.SSLWantReadError:
             character = ''
 
@@ -182,12 +182,15 @@ class ShowerThoughtBot(Bot):
             # logging.debug("Releasing socket lock")
             self.socket_lock.release()
 
-            for m in messages:
+            while len(messages) > 0:
+                self.messageHandler(messages.pop(0))
+            # for m in messages:
                 # Start a thread to handle each of the received messages
-                t = threading.Thread(target=self.messageHandler, args=(m,))
-                threads.append(t)
+                # t = threading.Thread(target=self.messageHandler, args=(m,))
+                # threads.append(t)
                 # logging.debug("Starting messageHandler")
-                t.start()
+                # t.start()
+
 
             # Start a thread to update the db if required.
             updatedb = threading.Thread(name='DBUpdater', target=self.updateDB())
