@@ -60,9 +60,12 @@ class ShowerThoughtBot(Bot):
               msg.find(":{}: source".format(self.nick)) != -1):
             logging.debug(msg)
             self.printSourceLink(chan)
-        elif(msg.find(":{}: updatedb") != -1 and
-             fromNick == 'mlane'):
-            self.updateDB()
+        elif msg.find(":{}: updatedb") != -1:
+            if not fromNick == 'mlane':
+                self.ircsock.send("PRIVMSG {} :Don't tell me what to do!".format(chan).encode())
+            else:
+                self.updateDB(False)
+                self.ircsock.send("PRIVMSG {} :Pulled in 5 more shower thoughts".format(chan).encode())
         else:
             return
 
@@ -193,9 +196,10 @@ class ShowerThoughtBot(Bot):
 
 
             # Start a thread to update the db if required.
-            updatedb = threading.Thread(name='DBUpdater', target=self.updateDB())
-            updatedb.start()
+            # updatedb = threading.Thread(name='DBUpdater', target=self.updateDB())
+            # updatedb.start()
 
+            self.updateDB()
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')
 bot.run()
