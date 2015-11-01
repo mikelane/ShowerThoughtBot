@@ -60,7 +60,7 @@ class ShowerThoughtBot(Bot):
               msg.find(":{}: source".format(self.nick)) != -1):
             logging.debug(msg)
             self.printSourceLink(chan)
-        elif msg.find(":{}: updatedb") != -1:
+        elif msg.find(":{}: updatedb".format(self.nick)) != -1:
             if not fromNick == 'mlane':
                 self.ircsock.send("PRIVMSG {} :Don't tell me what to do!\r\n".format(chan).encode())
             else:
