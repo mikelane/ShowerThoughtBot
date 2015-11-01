@@ -102,17 +102,19 @@ class ShowerThoughtBot(Bot):
     def print_source_link(self, chan):
         self.send_message(chan, "ShowerThoughtBot is by Mike Lane, "
                                 "https://github.com/mikelane/ShowerThoughtBot")
+        self.send_message(chan, "Feel free to fork or report issues.")
 
 
     def print_help(self, chan):
-        self.send_message(chan, "I respond to showerthoughtbot: "
-                          "<command>, !stb <command>, hello "
-                          "showerthoughtbot, and hi "
-                          "showerthoughtbot")
-        self.send_message(chan, "Current commands are \"thought\", \"help\", "
-                                "and \"source\".")
-        self.send_message(chan, "Or get a shower thought with !showerthought.")
-        self.send_message(chan, "More to come")
+        lines = []
+        lines.append("I respond to {}: $command".format(self.nick))
+        lines.append("$command = [help|thought|source]")
+        lines.append("Get a shower thought with !showerthought.")
+        lines.append("More to come...")
+        lines.append("mlane@cat.pdx.edu for bugs.")
+
+        for line in lines:
+            self.send_message(chan, line)
 
 
     def print_shower_thought(self, chan, nick):
