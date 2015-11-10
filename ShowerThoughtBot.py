@@ -9,7 +9,7 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/)'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import re, yaml, logging, ssl, getopt, sys
+import re, yaml, logging, ssl, getopt, sys, time
 from bot import Bot
 from reddit import Reddit
 from datetime import datetime
@@ -173,7 +173,7 @@ class ShowerThoughtBot(Bot):
             while len(messages) > 0:
                 self.message_handler(messages.pop(0))
             self.update_database()
-
+            time.sleep(1)
 
 # Initialize a bot!
 bot = ShowerThoughtBot('config.yml')
