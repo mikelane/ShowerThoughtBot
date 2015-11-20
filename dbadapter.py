@@ -10,7 +10,7 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import logging
+import logging, re
 from dbmanager import DBManager
 from sqlite3 import IntegrityError
 
@@ -51,7 +51,7 @@ class DBAdapter:
             while True:
                 c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
                 result = c.fetchone()
-                result_words = set(result[1].split())
+                result_words = set(re.split('[\W]+', result[1])
                 if self.vulgarities.isdisjoint(result_words):
                     return result
                 else:
