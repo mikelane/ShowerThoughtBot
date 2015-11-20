@@ -20,6 +20,7 @@ class DBAdapter:
     def __init__(self, file):
         self.file = file
         self.create_database()
+        self.vulgarities = set("penis", "dick", "dicks", "fuck", "shit", "ass", "vagina", "pussy", "cunt")
 
 
     def create_database(self):
@@ -45,5 +46,7 @@ class DBAdapter:
 
     def get_random_thought(self):
         with DBManager(self.file) as c:
-            c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
-            return c.fetchone()
+            while True:
+                c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
+                result = c.fetchone()
+                if self.vulgarities.isdisjoint(result):
