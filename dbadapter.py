@@ -20,10 +20,10 @@ class DBAdapter:
     def __init__(self, file):
         self.file = file
         self.create_database()
-        f = open('vulgarities.txt', 'r')
         self.vulgarities = set()
-        for line in f:
-            self.vulgarities.add(line.rstrip())
+        with open('vulgarities.txt', 'r') as f:
+            for line in f:
+                self.vulgarities.add(line.rstrip())
 
     def create_database(self):
         with DBManager(self.file) as c:
