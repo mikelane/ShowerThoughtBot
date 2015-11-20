@@ -20,7 +20,9 @@ class DBAdapter:
     def __init__(self, file):
         self.file = file
         self.create_database()
-        self.vulgarities = {"penis", "dick", "dicks", "fuck", "shit", "ass", "vagina", "pussy", "cunt"}
+        self.vulgarities = {"penis", "dick", "dicks", "fuck", "shit", "ass",
+                            "vagina", "pussy", "cunt", "r/gonewild",
+                            "fucker", "nigger", "bitch"}
 
 
     def create_database(self):
