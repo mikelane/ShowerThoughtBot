@@ -20,7 +20,7 @@ class DBAdapter:
     def __init__(self, file):
         self.file = file
         self.create_database()
-        self.vulgarities = set("penis", "dick", "dicks", "fuck", "shit", "ass", "vagina", "pussy", "cunt")
+        self.vulgarities = {"penis", "dick", "dicks", "fuck", "shit", "ass", "vagina", "pussy", "cunt"}
 
 
     def create_database(self):
@@ -50,3 +50,7 @@ class DBAdapter:
                 c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
                 result = c.fetchone()
                 if self.vulgarities.isdisjoint(result):
+                    return result
+                else:
+                    logger.debug("Filtered a vulgar showerthought.")
+
