@@ -49,8 +49,9 @@ class DBAdapter:
             while True:
                 c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
                 result = c.fetchone()
-                if self.vulgarities.isdisjoint(result):
+                result_words = set(result[1].split())
+                if self.vulgarities.isdisjoint(result_words):
                     return result
                 else:
-                    logger.debug("Filtered a vulgar showerthought.")
+                    logger.warning("Filtered a vulgar showerthought.")
 
