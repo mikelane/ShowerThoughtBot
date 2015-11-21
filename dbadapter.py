@@ -55,7 +55,7 @@ class DBAdapter:
             while True:
                 c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
                 result = c.fetchone()
-                result_words = re.split('[\W]+', b)
+                result_words = re.split('[\W]+', result)
                 result_words = set([word.lower() for word in result_words])
                 if self.vulgarities.isdisjoint(result_words):
                     return result
