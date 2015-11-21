@@ -10,7 +10,7 @@ __author__ = 'Mike Lane (http://www.github.com/mikelane/'
 __copyright__ = 'Copyright (c) 2015 Mike Lane'
 __license__ = 'GPLv3'
 
-import logging
+import logging, re
 from dbmanager import DBManager
 from sqlite3 import IntegrityError
 
@@ -21,9 +21,13 @@ class DBAdapter:
         self.file = file
         self.create_database()
         self.vulgarities = set()
-        with open('vulgarities.txt', 'r') as f:
+        with open('rotated_vulgarities.txt', 'r') as f:
             for line in f:
-                self.vulgarities.add(line.rstrip())
+                self.vulgarities.add(self.rot13(line.rstrip()))
+
+    def rot13(self, word):
+        rot13_data = bytes.maketrans(b"ABCDEFGHIJKLMabcdefghijklmNOPQRSTUVWXYZnopqrstuvwxyz",b"NOPQRSTUVWXYZnopqrstuvwxyzABCDEFGHIJKLMabcdefghijklm")
+        return word.translate(rot13_data)
 
     def create_database(self):
         with DBManager(self.file) as c:
@@ -51,7 +55,8 @@ class DBAdapter:
             while True:
                 c.execute('SELECT * FROM thoughts ORDER BY RANDOM() LIMIT 1')
                 result = c.fetchone()
-                result_words = set(result[1].split())
+                result_words = re.split('[\W]+', b)
+                result_words = set([word.lower() for word in result_words])
                 if self.vulgarities.isdisjoint(result_words):
                     return result
                 else:
